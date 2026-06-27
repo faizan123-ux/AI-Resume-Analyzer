@@ -1,6 +1,10 @@
 import os
 import json
 import io
+from dotenv import load_dotenv
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dotenv_path = os.path.join(base_dir,'.env')
+load_dotenv(dotenv_path=dotenv_path)
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse

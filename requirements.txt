@@ -4,3 +4,4 @@ google-genai
 python-dotenv
 pypdf
 xhtml2pdf
+python-multipart

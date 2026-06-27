@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px;}
+        .upload-box {
+            border: 2px dashed #3498db;
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            background: #f9fbfd;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .upload-box:hover { background: #f0f6fc; }
+        button {
+            display: block;
+            width: 100%;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #27ae60; }
+        #loading { display: none; text-align: center; font-weight: bold; color: #e67e22; margin: 20px 0; }
+        #result { display: none; margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
+        .score-badge {
+            display: inline-block;
+            background: #34495e;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .skills-container { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+        .skill-tag { background: #e1f5fe; color: #0288d1; padding: 5px 12px; border-radius: 15px; font-size: 14px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📄 AI Resume Analyzer</h1>
+    
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <p>Click to select or drop your Resume PDF here</p>
+        <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+        <span id="fileName" style="color: #7f8c8d; font-weight: 500;"></span>
+    </div>
+
+    <button onclick="uploadFile()">Analyze Resume</button>
+
+    <div id="loading">🤖 Processing your resume with AI... Please wait...</div>
+
+    <div id="result">
+        <h2>Analysis Results for <span id="candidateName" style="color:#3498db;"></span></h2>
+        <p><strong>ATS Score:</strong> <span id="resumeScore" class="score-badge"></span> / 100</p>
+        
+        <h3>Summary</h3>
+        <p id="resumeSummary"></p>
+        
+        <h3>Identified Key Skills</h3>
+        <div id="skillsList" class="skills-container"></div>
+        
+        <h3>Actionable Advice for Improvements</h3>
+        <ul id="improvementsList"></ul>
+
+        <hr style="margin-top: 30px; border: 0; border-top: 1px solid #ddd;">
+        <h3>✨ Need the Perfect Version?</h3>
+        <p>Click below to let AI completely rewrite your resume text to fix all the flaws perfectly for ATS scanners.</p>
+        <button onclick="generatePerfectResume()" style="background-color: #9b59b6;">Generate Perfect Resume Text</button>
+        
+        <div id="perfectResult" style="display:none; margin-top: 20px;">
+            <h4>✨ Your New Flawless Resume Preview:</h4>
+            
+            <div style="border: 1px solid #ccc; border-radius: 6px; overflow: hidden; background: white; margin-bottom: 15px;">
+                <iframe id="perfectResumePreview" style="width: 100%; height: 500px; border: none; display: block;"></iframe>
+            </div>
+            
+            <button onclick="copyToClipboard()" style="background-color: #34495e; width: auto; padding: 10px 20px; display: inline-block;">📋 Copy Code</button>
+            <button onclick="downloadPDF()" style="background-color: #2980b9; width: auto; padding: 10px 20px; display: inline-block; margin-left: 10px;">📥 Download PDF Resume</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let generatedResumeHTML = "";
+
+    // Show selected filename visually
+    document.getElementById('fileInput').onchange = function() {
+        document.getElementById('fileName').innerText = this.files[0] ? this.files[0].name : "";
+    };
+
+    async function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files[0]) {
+            alert("Please select a PDF file first!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        document.getElementById('loading').style.display = "block";
+        document.getElementById('result').style.display = "none";
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+            document.getElementById('loading').style.display = "none";
+
+            if (response.ok) {
+                const aiData = result.data;
+                
+                document.getElementById('candidateName').innerText = aiData.candidate_name || "Candidate";
+                document.getElementById('resumeScore').innerText = aiData.resume_score;
+                document.getElementById('resumeSummary').innerText = aiData.summary;
+
+                const skillsDiv = document.getElementById('skillsList');
+                skillsDiv.innerHTML = "";
+                aiData.extracted_skills.forEach(skill => {
+                    skillsDiv.innerHTML += `<span class="skill-tag">${skill}</span>`;
+                });
+
+                const impList = document.getElementById('improvementsList');
+                impList.innerHTML = "";
+                aiData.improvements.forEach(imp => {
+                    impList.innerHTML += `<li>${imp}</li>`;
+                });
+
+                document.getElementById('result').style.display = "block";
+            } else {
+                alert("Error: " + result.detail);
+            }
+        } catch (err) {
+            document.getElementById('loading').style.display = "none";
+            alert("Could not connect to backend server. Make sure your FastAPI is running!");
+        }
+    }
+
+    async function generatePerfectResume() {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files[0]) {
+            alert("Please select a PDF file first!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        const perfectResultDiv = document.getElementById('perfectResult');
+        perfectResultDiv.style.display = "block";
+        
+        const previewFrame = document.getElementById('perfectResumePreview');
+        previewFrame.contentDocument.open();
+        previewFrame.contentDocument.write("<p style='font-family:sans-serif; padding:20px; color:#e67e22;'>🤖 Rewriting your entire resume perfectly and rendering preview... Please wait...</p>");
+        previewFrame.contentDocument.close();
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/improve", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                generatedResumeHTML = result.perfect_resume_text;
+                
+                previewFrame.contentDocument.open();
+                previewFrame.contentDocument.write(generatedResumeHTML);
+                previewFrame.contentDocument.close();
+            } else {
+                alert("Error: " + result.detail);
+            }
+        } catch (err) {
+            alert("Could not connect to backend server.");
+        }
+    }
+
+    function copyToClipboard() {
+        if (!generatedResumeHTML) {
+            alert("No resume code available to copy!");
+            return;
+        }
+        navigator.clipboard.writeText(generatedResumeHTML);
+        alert("Perfect resume code copied to clipboard!");
+    }
+
+    async function downloadPDF() {
+        if (!generatedResumeHTML) {
+            alert("Please generate the perfect resume first!");
+            return;
+        }
+        
+        try {
+            const response = await fetch("http://127.0.0.1:8000/download-pdf", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: generatedResumeHTML })
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Perfect_ATS_Resume.pdf";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Failed to download PDF from server.");
+            }
+        } catch (err) {
+            alert("Could not connect to backend server for PDF generation.");
+        }
+    }
+</script>
+</body>
+</html>

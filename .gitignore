@@ -1,0 +1,10 @@
+# Ignore the environment API keys and virtual environments
+.env
+__pycache__/
+*.pyc
+venv/
+.vscode/
+
+# Ignore files uploaded by users locally
+uploads/*
+!uploads/.gitkeep

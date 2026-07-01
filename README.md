@@ -19,3 +19,5 @@ A Full-Stack AI application that parses PDF resumes, calculates an ATS match sco
    ```bash
    git clone [https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git](https://github.com/YOUR_USERNAME/AI-Resume-Analyzer.git)
    cd AI-Resume-Analyzer
+
+my own Website link 🌐 : https://faizan123-ux.github.io/AI-Resume-Analyzer

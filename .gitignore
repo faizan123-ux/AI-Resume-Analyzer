@@ -8,3 +8,8 @@ venv/
 # Ignore files uploaded by users locally
 uploads/*
 !uploads/.gitkeep
+
+
+.venv/
+backend/pip
+backend/python

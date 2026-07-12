@@ -5,4 +5,9 @@ python-dotenv
 pypdf
 xhtml2pdf
 python-multipart
-pdfplumber==0.11.0
+pydantic
+pydantic-settings
+sqlalchemy
+pdfplumber
+
+

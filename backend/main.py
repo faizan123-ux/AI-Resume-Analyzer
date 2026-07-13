@@ -14,11 +14,10 @@ from google import genai
 from google.genai import types
 from xhtml2pdf import pisa
 
+import models 
+import security
+from database import engine, get_db
 
-from backend import models 
-from backend import security
-from backend.database import engine, get_db
-from backend.database import Base
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dotenv_path = os.path.join(base_dir, '.env')

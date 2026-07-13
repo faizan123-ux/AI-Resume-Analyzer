@@ -10,3 +10,6 @@ pydantic-settings
 sqlalchemy
 pdfplumber
 psycopg2-binary
+python-jose
+passlib
+bcrypt

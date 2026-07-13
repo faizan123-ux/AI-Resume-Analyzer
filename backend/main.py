@@ -14,10 +14,13 @@ from google import genai
 from google.genai import types
 from xhtml2pdf import pisa
 
+
+# --- ഇംപോർട്ടുകൾ ഈ രീതിയിൽ മാത്രം നൽകുക ---
 import models 
 import security
 from database import engine, get_db
 
+# ബാക്കി നിങ്ങളുടെ മുഴുവൻ കോഡും (FastAPI അപ്ലിക്കേഷൻ ഫംഗ്ഷനുകൾ) താഴേക്ക് അതേപടി തുടരുക...
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dotenv_path = os.path.join(base_dir, '.env')

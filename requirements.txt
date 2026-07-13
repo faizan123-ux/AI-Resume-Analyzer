@@ -9,5 +9,4 @@ pydantic
 pydantic-settings
 sqlalchemy
 pdfplumber
-
-
+psycopg2-binary

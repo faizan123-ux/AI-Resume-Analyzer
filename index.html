@@ -332,7 +332,7 @@
 </div>
 
 <script>
-    const backendBaseUrl = "https://ai-resume-analyzer-vzbi.onrender.com"; 
+    const backendBaseUrl = "https://ai-resume-analyzer-and-builder-n7om.onrender.com"; 
     let userToken = localStorage.getItem('userToken') || null;
     let currentStep = 0;
 
@@ -444,7 +444,8 @@
 
     async function handleSignUp(event) {
         if(event) event.preventDefault();
-        const email = document.getElementById('auth_username').value;
+        // .trim() ചേർക്കുന്നത് വഴി യൂസർ ടൈപ്പ് ചെയ്യുമ്പോൾ അറിയാതെ വീഴുന്ന സ്പേസുകൾ ഒഴിവാക്കാം
+        const email = document.getElementById('auth_username').value.trim();
         const password = document.getElementById('auth_password').value;
         
         if (!email || !password) {
@@ -467,11 +468,14 @@
                 alert("Registration Successful! Click 'Sign In' and enter credentials.");
                 switchAuthTab('login');
             } else {
+                // ബാക്കെൻഡിൽ നിന്നുള്ള യഥാർത്ഥ എറർ എന്താണെന്ന് ഇവിടെ കാണിക്കും
                 alert("Registration Failed: " + (data.detail || "Error"));
             }
         } catch (err) {
             document.getElementById('loading').style.display = 'none';
-            alert("Sign up connection failed.");
+            // നെറ്റ്‌വർക്ക് എറർ ആണോ അതോ ഡാറ്റാ ഫോർമാറ്റ് പ്രശ്നമാണോ എന്ന് മനസ്സിലാക്കാൻ കൺസോളിലേക്ക് പ്രിന്റ് ചെയ്യുന്നു
+            console.log("Error details",err);
+            alert("Sign up connection failed. Please ensure you enter a valid email format (e.g., name@gmail.com).");
         }
     }
 

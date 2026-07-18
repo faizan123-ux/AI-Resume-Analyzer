@@ -14,7 +14,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    # പാസ്‌വേഡ് 72 ബൈറ്റിൽ കൂടുതൽ ആണെങ്കിൽ അതിനെ മുറിച്ച് ചെറുതാക്കുന്നു (Truncate)
+    password_bytes = password.encode('utf-8')[:72]
+    safe_password = password_bytes.decode('utf-8', errors='ignore')
+    
+    # ഇനി സുരക്ഷിതമായി ഹാഷ് ചെയ്യാം, ക്രാഷ് ആകില്ല!
+    return pwd_context.hash(safe_password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

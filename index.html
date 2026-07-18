@@ -474,8 +474,8 @@
         } catch (err) {
             document.getElementById('loading').style.display = 'none';
             // നെറ്റ്‌വർക്ക് എറർ ആണോ അതോ ഡാറ്റാ ഫോർമാറ്റ് പ്രശ്നമാണോ എന്ന് മനസ്സിലാക്കാൻ കൺസോളിലേക്ക് പ്രിന്റ് ചെയ്യുന്നു
-            console.log("Error details",err);
-            alert("Sign up connection failed. Please ensure you enter a valid email format (e.g., name@gmail.com).");
+            console.log("Detailed signup Error",err);
+            alert("Sign up connection failed due to a server connection issue. Please check your internet or console logs.")
         }
     }
 

@@ -14,13 +14,10 @@ from google import genai
 from google.genai import types
 from xhtml2pdf import pisa
 
-
 # --- ഇംപോർട്ടുകൾ ഈ രീതിയിൽ മാത്രം നൽകുക ---
 import models 
 import security
 from database import engine, get_db
-
-# ബാക്കി നിങ്ങളുടെ മുഴുവൻ കോഡും (FastAPI അപ്ലിക്കേഷൻ ഫംഗ്ഷനുകൾ) താഴേക്ക് അതേപടി തുടരുക...
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 dotenv_path = os.path.join(base_dir, '.env')
@@ -30,12 +27,13 @@ app = FastAPI(title="AI Universal Resume Builder & Analyzer")
 
 models.Base.metadata.create_all(bind=engine)
 
+# --- 🌟 CORS സെറ്റിങ്സ് ഇവിടെ അപ്ഡേറ്റ് ചെയ്തിരിക്കുന്നു 🌟 ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # എല്ലാ ലോക്കൽ/ലൈവ് ഒറിജിനുകളിൽ നിന്നും കണക്ഷൻ അനുവദിക്കുന്നു
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # GET, POST, OPTIONS എല്ലാ മെത്തേഡുകളും അനുവദിക്കുന്നു
+    allow_headers=["*"],  # എല്ലാ ഹെഡറുകളും അനുവദിക്കുന്നു
 )
 
 security_jwt = HTTPBearer()
@@ -44,7 +42,6 @@ client = genai.Client()
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 
 
 class CreateFromScratchInput(BaseModel):
@@ -88,8 +85,6 @@ def home():
     return {"message": "AI Resume Analyzer Running"}
 
 
-
-
 @app.post("/auth/signup")
 def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user_data.email).first()
@@ -115,7 +110,6 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     
     access_token = security.create_access_token(data={"sub": db_user.email, "user_id": db_user.id})
     return {"access_token": access_token, "token_type": "bearer"}
-
 
 
 @app.post("/audit")
@@ -176,7 +170,6 @@ async def audit_resume(
             ai_suggestions = result_data.get("suggestions", ["Structure optimized by AI"])
             
         except Exception as gemini_err:
-            # --- 🌟 ബാക്കെൻഡിൽ കൃത്യമായ UNAVAILABLE എറർ ഹാൻഡ്‌ലിങ് നൽകുന്നു 🌟 ---
             raise HTTPException(
                 status_code=503, 
                 detail=f"Gemini AI temporary traffic spike: SERVICE_UNAVAILABLE. {str(gemini_err)}"
@@ -207,7 +200,6 @@ async def audit_resume(
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File Processing Error: {str(e)}")
-
 
 
 @app.post("/create-from-scratch")
@@ -245,7 +237,6 @@ def create_resume_from_scratch(
             response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
             clean_html = response.text.replace("```html", "").replace("```", "").strip()
         except Exception as gemini_err:
-          
             raise HTTPException(
                 status_code=503, 
                 detail=f"Gemini AI temporary traffic spike: SERVICE_UNAVAILABLE. {str(gemini_err)}"
@@ -270,8 +261,6 @@ def create_resume_from_scratch(
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gemini Error: {str(e)}")
-
-
 
 
 @app.get("/download-pdf")

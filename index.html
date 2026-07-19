@@ -181,7 +181,7 @@
             border-radius: 12px;
             margin-top: 30px;
         }
-        .ai-suggestions-box h4 { margin-top: 0; color: #166534; display: flex; align-items: center; gap: 8px;}
+        .ai-suggestions-box h4 { margin-top: 0; color: #38a261; display: flex; align-items: center; gap: 8px;}
 
         #loading { display: none; text-align: center; font-weight: bold; color: #d97706; margin: 25px 0; }
         #result { display: none; margin-top: 35px; border-top: 2px solid var(--border); padding-top: 25px; }
@@ -330,415 +330,244 @@
         </div>
     </div>
 </div>
-
 <script>
-    const backendBaseUrl = "https://ai-resume-analyzer-and-builder-n7om.onrender.com"; 
-    let userToken = localStorage.getItem('userToken') || null;
-    let currentStep = 0;
+// 1. Backend URL Configuration
+const backendBaseUrl = "https://ai-resume-analyzer-and-builder-n7om.onrender.com";
+let userToken = localStorage.getItem("token") || null;
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const savedUsername = localStorage.getItem('username');
-        if (userToken && savedUsername) {
-            showAppInterface(savedUsername);
+// Page Load ചെയ്യുമ്പോൾ ടോക്കൺ ഉണ്ടെങ്കിൽ ചെക്ക് ചെയ്യാനുള്ള ലോജിക്
+window.onload = function() {
+    if (userToken) {
+        console.log("User is already logged in with token.");
+    }
+};
+function switchAuthTab(type) {
+
+    const loginTab = document.getElementById("loginTab");
+    const signupTab = document.getElementById("signupTab");
+
+    const fullnameField = document.getElementById("fullname_field");
+
+    const signinBtn = document.getElementById("signin_btn");
+    const signupBtn = document.getElementById("signup_btn");
+
+    if (type === "login") {
+
+        loginTab.classList.add("active");
+        signupTab.classList.remove("active");
+
+        fullnameField.style.display = "none";
+
+        signinBtn.style.display = "block";
+        signupBtn.style.display = "none";
+
+    } else {
+
+        signupTab.classList.add("active");
+        loginTab.classList.remove("active");
+
+        fullnameField.style.display = "block";
+
+        signinBtn.style.display = "none";
+        signupBtn.style.display = "block";
+    }
+}
+// 2. Tab Switching Logic (ReferenceError പരിഹരിക്കാൻ)
+function switchTab(tabName) {
+    console.log("Switching to tab:", tabName);
+    const signinForm = document.getElementById('signin-form');
+    const signupForm = document.getElementById('signup-form');
+    const signinTab = document.getElementById('signin-tab') || document.querySelector('[onclick="switchTab(\'signin\')"]');
+    const signupTab = document.getElementById('signup-tab') || document.querySelector('[onclick="switchTab(\'signup\')"]');
+
+    if (tabName === 'signin') {
+        if (signinForm) signinForm.style.display = 'block';
+        if (signupForm) signupForm.style.display = 'none';
+        if (signinTab) signinTab.classList.add('active');
+        if (signupTab) signupTab.classList.remove('active');
+    } else if (tabName === 'signup') {
+        if (signinForm) signinForm.style.display = 'none';
+        if (signupForm) signupForm.style.display = 'block';
+        if (signupTab) signupTab.classList.add('active');
+        if (signinTab) signinTab.classList.remove('active');
+    }
+}
+
+// 3. User Sign Up Logic (പുതിയ എറർ ഹാൻഡ്‌ലിംഗ് ഉൾപ്പെടുത്തിയത്)
+async function handleSignUp(event) {
+
+    if (event) event.preventDefault();
+
+    const email = document.getElementById('auth_username').value;
+    const password = document.getElementById('auth_password').value;
+
+    try {
+
+        const response = await fetch(`${backendBaseUrl}/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert("Signup Successful!");
         } else {
-            switchAuthTab('login');
+            console.log(data);
+            alert("Signup Failed: " + JSON.stringify(data));
         }
-    });
 
-    function switchAuthTab(mode) {
-        const loginTab = document.getElementById('loginTab');
-        const signupTab = document.getElementById('signupTab');
-        const nameField = document.getElementById('fullname_field');
-        const signInBtn = document.getElementById('signin_btn');
-        const signUpBtn = document.getElementById('signup_btn');
+    } catch (err) {
+        console.error(err);
+        alert("Server Error");
+    }
+}
+// 4. User Sign In Logic
+async function handleSignIn(event) {
+    if (event) event.preventDefault();
 
-        if (mode === 'login') {
-            if(loginTab) loginTab.classList.add('active');
-            if(signupTab) signupTab.classList.remove('active');
-            if(nameField) nameField.style.display = 'none';
-            if(signInBtn) signInBtn.style.display = 'block';
-            if(signUpBtn) signUpBtn.style.display = 'none';
+    const email = document.getElementById('auth_username').value;
+    const password = document.getElementById('auth_password').value;
+
+    document.getElementById('loading').style.display = 'block';
+
+    try {
+        const response = await fetch(`${backendBaseUrl}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                username: email,
+                password: password
+            })
+        });
+
+        const data = await response.json();
+        document.getElementById('loading').style.display = 'none';
+
+        if (response.ok) {
+            alert("Login Successful!");
+            userToken = data.access_token;
+            localStorage.setItem("token", userToken);
+            // ലോഗിൻ വിജയകരമായാൽ ഡാഷ്‌ബോർഡ് കാണിക്കാം
         } else {
-            if(signupTab) signupTab.classList.add('active');
-            if(loginTab) loginTab.classList.remove('active');
-            if(nameField) nameField.style.display = 'block';
-            if(signInBtn) signInBtn.style.display = 'none';
-            if(signUpBtn) signUpBtn.style.display = 'block';
+            alert("Login Failed: " + (data.detail || "Invalid email or password."));
         }
+    } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        console.error("Login Error:", err);
+        alert("Failed to connect to backend server during login.");
     }
+}
 
-    function switchMode(modeId) {
-        document.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
+// 5. User Logout Logic
+function handleLogout() {
+    localStorage.removeItem("token");
+    userToken = null;
+    alert("Logged out successfully.");
+    window.location.reload();
+}
+
+// 6. Resume Creation & Audit Logic (Gemini Server Errors ഉൾപ്പെടുത്തിയത്)
+async function handleCreateFromScratch(event) {
+    if(event) event.preventDefault();
+    if (!userToken) {
+        alert("Session expired.");
+        handleLogout();
+        return;
+    }
+    document.getElementById('loading').style.display = 'block';
+    
+    const skillsArray = document.getElementById('scratch_skills').value.split(',').map(s => s.trim()).filter(s => s !== "");
+    const softSkillsArray = document.getElementById('scratch_soft_skills').value ? document.getElementById('scratch_soft_skills').value.split(',').map(s => s.trim()).filter(s => s !== "") : [];
+    const languagesArray = document.getElementById('scratch_languages').value ? document.getElementById('scratch_languages').value.split(',').map(s => s.trim()).filter(s => s !== "") : [];
+    const expArray = document.getElementById('scratch_experience').value ? document.getElementById('scratch_experience').value.split(',').map(s => s.trim()).filter(s => s !== "") : [];
+    
+    const payload = {
+        name: document.getElementById('scratch_name').value || "Unnamed",
+        email: document.getElementById('scratch_email').value || "noemail@example.com",
+        phone: document.getElementById('scratch_phone').value || "",
+        linkedin: document.getElementById('scratch_linkedin').value || "",
+        github: document.getElementById('scratch_github').value || "",
+        portfolio_link: document.getElementById('scratch_portfolio').value || "",
+        target_domain: document.getElementById('scratch_domain').value || "General",
+        career_objective: document.getElementById('scratch_objective').value || "",
+        institution_name: document.getElementById('scratch_institution').value || "",
+        university: document.getElementById('scratch_university').value || "",
+        year_of_passing: document.getElementById('scratch_year').value || "",
+        percentage_or_cgpa: document.getElementById('scratch_score').value || "",
+        skills: skillsArray,
+        soft_skills: softSkillsArray,
+        experience_or_projects: expArray,
+        certifications: [],
+        achievements: [],
+        positions_of_responsibility: [],
+        languages: languagesArray
+    };
+
+    try {
+        const response = await fetch(`${backendBaseUrl}/create-from-scratch`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`
+            },
+            body: JSON.stringify(payload)
+        });
         
-        document.getElementById(modeId).classList.add('active');
-        if(modeId === 'improve-mode') {
-            document.getElementById('tab-improve').classList.add('active');
+        const data = await response.json();
+        document.getElementById('loading').style.display = 'none';
+
+        if (response.ok) {
+            alert("Resume Profile Created Successfully!");
+            window.currentUploadedResumeId = data.resume_id;
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('candidateName').innerText = payload.name;
+            document.getElementById('resumeSummary').innerText = payload.career_objective || "Fresh Resume Profile";
+            
+            const skillsList = document.getElementById('skillsList');
+            skillsList.innerHTML = '';
+            payload.skills.forEach(skill => {
+                const span = document.createElement('span');
+                span.className = 'skill-tag';
+                span.innerText = skill;
+                skillsList.appendChild(span);
+            });
+            
+            document.getElementById('resumeScore').innerText = "100";
+            document.getElementById('improvementsList').innerHTML = '<li>✨ Resume created successfully from scratch!</li>';
+            
+            const iframe = document.getElementById('perfectResumePreview');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(data.perfect_resume_text || "No preview text generated.");
+            iframeDoc.close();
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         } else {
-            document.getElementById('tab-scratch').classList.add('active');
-        }
-    }
-
-    function switchFormStep(stepIndex) {
-        currentStep = stepIndex;
-        const sections = document.querySelectorAll('.form-section');
-        const buttons = document.querySelectorAll('.step-btn');
-        
-        sections.forEach((s, idx) => s.classList.toggle('active', idx === stepIndex));
-        buttons.forEach((b, idx) => b.classList.toggle('active', idx === stepIndex));
-        
-        document.getElementById('prevFormBtn').style.display = stepIndex === 0 ? 'none' : 'block';
-        
-        if (stepIndex === sections.length - 1) {
-            document.getElementById('nextFormBtn').style.display = 'none';
-            document.getElementById('buildScratchBtn').style.display = 'block';
-        } else {
-            document.getElementById('nextFormBtn').style.display = 'block';
-            document.getElementById('buildScratchBtn').style.display = 'none';
-        }
-    }
-
-    function moveWizard(direction) {
-        const sections = document.querySelectorAll('.form-section');
-        let newStep = currentStep + direction;
-        if(newStep >= 0 && newStep < sections.length) {
-            switchFormStep(newStep);
-        }
-    }
-
-    async function handleSignIn(event) {
-        if(event) event.preventDefault();
-        const email = document.getElementById('auth_username').value;
-        const password = document.getElementById('auth_password').value;
-        
-        if (!email || !password) {
-            alert("Please fill in all fields");
-            return;
-        }
-
-        document.getElementById('loading').style.display = 'block';
-
-        try {
-            const response = await fetch(`${backendBaseUrl}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, password: password })
-            });
-            const data = await response.json();
-            document.getElementById('loading').style.display = 'none';
-
-            if (response.ok) {
-                userToken = data.access_token;
-                localStorage.setItem('userToken', userToken);
-                localStorage.setItem('username', email);
-                showAppInterface(email);
-                alert("Sign In Successful!");
-            } else {
-                alert("Login Failed: " + (data.detail || "Invalid credentials (404/401)"));
+            if (response.status === 401) {
+                alert("Session expired! Please login again.");
+                handleLogout();
+                return;
             }
-        } catch (err) {
-            document.getElementById('loading').style.display = 'none';
-            alert("Cannot connect to Auth Backend Server.");
-        }
-    }
-
-    async function handleSignUp(event) {
-        if(event) event.preventDefault();
-        // .trim() ചേർക്കുന്നത് വഴി യൂസർ ടൈപ്പ് ചെയ്യുമ്പോൾ അറിയാതെ വീഴുന്ന സ്പേസുകൾ ഒഴിവാക്കാം
-        const email = document.getElementById('auth_username').value.trim();
-        const password = document.getElementById('auth_password').value;
-        
-        if (!email || !password) {
-            alert("Please fill fields");
-            return;
-        }
-
-        document.getElementById('loading').style.display = 'block';
-
-        try {
-            const response = await fetch(`${backendBaseUrl}/auth/signup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, password: password })
-            });
-            const data = await response.json();
-            document.getElementById('loading').style.display = 'none';
-
-            if (response.ok) {
-                alert("Registration Successful! Click 'Sign In' and enter credentials.");
-                switchAuthTab('login');
+            if (response.status === 503 || (data.detail && JSON.stringify(data.detail).includes("UNAVAILABLE"))) {
+                alert("Gemini AI Server-ൽ കൂടുതൽ ട്രാഫിക് ഉള്ളതിനാൽ റിസ്യൂം ജനറേറ്റ് ചെയ്യാൻ കഴിഞ്ഞില്ല. ദയവായി അല്പം കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.");
             } else {
-                // ബാക്കെൻഡിൽ നിന്നുള്ള യഥാർത്ഥ എറർ എന്താണെന്ന് ഇവിടെ കാണിക്കും
-                alert("Registration Failed: " + (data.detail || "Error"));
+                alert("Server Error: " + JSON.stringify(data.detail || "Error processing file"));
             }
-        } catch (err) {
-            document.getElementById('loading').style.display = 'none';
-            // നെറ്റ്‌വർക്ക് എറർ ആണോ അതോ ഡാറ്റാ ഫോർമാറ്റ് പ്രശ്നമാണോ എന്ന് മനസ്സിലാക്കാൻ കൺസോളിലേക്ക് പ്രിന്റ് ചെയ്യുന്നു
-            console.log("Detailed signup Error",err);
-            alert("Sign up connection failed due to a server connection issue. Please check your internet or console logs.")
         }
+    } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        console.error("Resume Action Error:", err);
+        alert("Failed to connect to backend server.");
     }
-
-    function showAppInterface(username) {
-        document.getElementById('auth_container').style.display = 'none';
-        document.getElementById('app_container').style.display = 'block';
-        document.getElementById('user_display_name').innerText = username;
-    }
-
-    function handleLogout() {
-        localStorage.removeItem('userToken');
-        localStorage.removeItem('username');
-        userToken = null;
-        document.getElementById('app_container').style.display = 'none';
-        document.getElementById('auth_container').style.display = 'block';
-        switchAuthTab('login');
-    }
-
-    async function uploadFile() {
-        const fileInput = document.getElementById('fileInput');
-        if (!fileInput.files || fileInput.files.length === 0) {
-            alert("Please select a resume PDF file first!");
-            return;
-        }
-
-        if (!userToken) {
-            alert("Session expired. Please login again.");
-            handleLogout();
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append("file", file);
-
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('result').style.display = 'none';
-
-        try {
-            const response = await fetch(`${backendBaseUrl}/audit-resume`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${userToken}`
-                },
-                body: formData
-            });
-
-            const data = await response.json();
-            document.getElementById('loading').style.display = 'none';
-
-            if (response.ok) {
-                alert("Resume Analysis Completed!");
-                document.getElementById('result').style.display = 'block';
-                
-                if (data.parsed_data) {
-                    document.getElementById('candidateName').innerText = data.parsed_data.name || "Candidate";
-                    document.getElementById('resumeSummary').innerText = data.parsed_data.career_objective || "No objective parsed.";
-                    
-                    const skillsList = document.getElementById('skillsList');
-                    skillsList.innerHTML = '';
-                    if(data.parsed_data.skills && Array.isArray(data.parsed_data.skills)) {
-                        data.parsed_data.skills.forEach(skill => {
-                            const span = document.createElement('span');
-                            span.className = 'skill-tag';
-                            span.innerText = skill;
-                            skillsList.appendChild(span);
-                        });
-                    }
-                }
-                
-              
-                document.getElementById('resumeScore').innerText = (data.ats_score !== undefined) ? data.ats_score : "0";
-
-                const improvementsList = document.getElementById('improvementsList');
-                improvementsList.innerHTML = '';
-                if(data.suggestions && Array.isArray(data.suggestions)) {
-                    data.suggestions.forEach(suggestion => {
-                        const li = document.createElement('li');
-                        li.innerText = suggestion;
-                        improvementsList.appendChild(li);
-                    });
-                }
-
-                if (data.resume_id) {
-                    window.currentUploadedResumeId = data.resume_id;
-                    
-                    const iframe = document.getElementById('perfectResumePreview');
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    
-                    iframeDoc.open();
-                    iframeDoc.write(`
-                        <html>
-                        <head>
-                            <style>
-                                body { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333; line-height: 1.5; }
-                                h1 { color: #1e3a8a; }
-                                h2 { border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; color: #1e40af; }
-                            </style>
-                        </head>
-                        <body>
-                            ${data.perfect_resume_text || "No preview text generated."}
-                        </body>
-                        </html>
-                    `);
-                    iframeDoc.close();
-                }
-            } else {
-                if (response.status === 401) {
-                    alert("Session expired! Please login again.");
-                    handleLogout();
-                    return;
-                }
-                if (response.status === 503 || (data.detail && JSON.stringify(data.detail).includes("UNAVAILABLE"))) {
-                    alert("Gemini AI Server-ൽ കൂടുതൽ ട്രാഫിക് ഉള്ളതിനാൽ താൽക്കാലികമായി സർവീസ് ലഭ്യമല്ല. ദയവായി അല്പം കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.");
-                } else {
-                    alert("Audit Failed: " + (data.detail ? JSON.stringify(data.detail) : "Error processing file"));
-                }
-            }
-        } catch (err) {
-            document.getElementById('loading').style.display = 'none';
-            alert("Failed to connect to backend server.");
-        }
-    }
-
-    async function handleCreateFromScratch(event) {
-        if(event) event.preventDefault();
-        if (!userToken) {
-            alert("Session expired.");
-            handleLogout();
-            return;
-        }
-
-        document.getElementById('loading').style.display = 'block';
-
-        const skillsArray = document.getElementById('scratch_skills').value.split(',').map(s => s.trim()).filter(s => s !== "");
-        const softSkillsArray = document.getElementById('scratch_soft_skills').value ? document.getElementById('scratch_soft_skills').value.split(',').map(s => s.trim()).filter(s => s !== "") : [];
-        const languagesArray = document.getElementById('scratch_languages').value ? document.getElementById('scratch_languages').value.split(',').map(s => s.trim()).filter(s => s !== "") : [];
-        const expArray = document.getElementById('scratch_experience').value ? document.getElementById('scratch_experience').value.split(',').map(s => s.trim()).filter(s => s !== "") : [];
-
-        const payload = {
-            name: document.getElementById('scratch_name').value || "Unnamed",
-            email: document.getElementById('scratch_email').value || "noemail@example.com",
-            phone: document.getElementById('scratch_phone').value || "",
-            linkedin: document.getElementById('scratch_linkedin').value || "",
-            github: document.getElementById('scratch_github').value || "",
-            portfolio_link: document.getElementById('scratch_portfolio').value || "",
-            target_domain: document.getElementById('scratch_domain').value || "General",
-            career_objective: document.getElementById('scratch_objective').value || "",
-            institution_name: document.getElementById('scratch_institution').value || "",
-            university: document.getElementById('scratch_university').value || "",
-            year_of_passing: document.getElementById('scratch_year').value || "",
-            percentage_or_cgpa: document.getElementById('scratch_score').value || "",
-            skills: skillsArray,
-            soft_skills: softSkillsArray,
-            experience_or_projects: expArray,
-            certifications: [],
-            achievements: [],
-            positions_of_responsibility: [],
-            languages: languagesArray
-        };
-
-        try {
-            const response = await fetch(`${backendBaseUrl}/create-from-scratch`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            document.getElementById('loading').style.display = 'none';
-
-            if (response.ok) {
-                alert("Resume Profile Created Successfully!");
-                window.currentUploadedResumeId = data.resume_id;
-
-                document.getElementById('result').style.display = 'block';
-                document.getElementById('candidateName').innerText = payload.name;
-                document.getElementById('resumeSummary').innerText = payload.career_objective || "Fresh Resume Profile";
-                
-                const skillsList = document.getElementById('skillsList');
-                skillsList.innerHTML = '';
-                payload.skills.forEach(skill => {
-                    const span = document.createElement('span');
-                    span.className = 'skill-tag';
-                    span.innerText = skill;
-                    skillsList.appendChild(span);
-                });
-
-                document.getElementById('resumeScore').innerText = "100"; 
-                document.getElementById('improvementsList').innerHTML = '<li>✨ Resume created successfully from scratch!</li>';
-
-                const iframe = document.getElementById('perfectResumePreview');
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                
-                iframeDoc.open();
-                iframeDoc.write(`
-                    <html>
-                    <head>
-                        <style>
-                            body { font-family: 'Segoe UI', sans-serif; padding: 20px; color: #333; line-height: 1.5; }
-                            h1 { color: #1e3a8a; }
-                            h2 { border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; color: #1e40af; }
-                        </style>
-                    </head>
-                    <body>
-                        ${data.perfect_resume_text || "No preview text generated."}
-                    </body>
-                    </html>
-                `);
-                iframeDoc.close();
-
-                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
-
-            } else {
-                if (response.status === 503 || (data.detail && JSON.stringify(data.detail).includes("UNAVAILABLE"))) {
-                    alert("Gemini AI Server-ൽ കൂടുതൽ ട്രാഫിക് ഉള്ളതിനാൽ റിസ്യൂം ജനറേറ്റ് ചെയ്യാൻ കഴിഞ്ഞില്ല. ദയവായി അല്പം കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.");
-                } else {
-                    alert("Server Error (422): " + JSON.stringify(data.detail));
-                }
-            }
-        } catch (err) {
-            document.getElementById('loading').style.display = 'none';
-            alert("Failed to connect.");
-        }
-    }
-
-    async function downloadPdfAction(resumeId) {
-        const id = resumeId || window.currentUploadedResumeId;
-        if (!id) {
-            alert("No Resume ID found!");
-            return;
-        }
-        document.getElementById('loading').style.display = 'block';
-        try {
-            const response = await fetch(`${backendBaseUrl}/download-pdf?resume_id=${id}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${userToken}` }
-            });
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `perfect_resume_${id}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            } else {
-                alert("Failed download.");
-            }
-        } catch (err) {
-            alert("Error generating PDF.");
-        } finally {
-            document.getElementById('loading').style.display = 'none';
-        }
-    }
-
-    function downloadPDF() {
-        downloadPdfAction(window.currentUploadedResumeId);
-    }
+}
 </script>
 </body>
 </html>
